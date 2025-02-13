@@ -6,10 +6,10 @@
     android:layout_height="match_parent">
 
     <Button
-        android:id="@+id/button"
-        android:layout_width="410dp"
-        android:layout_height="49dp"
-        android:text="Button"
+        android:id="@+id/setbutton"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="@string/set"
         app:layout_constraintTop_toTopOf="parent"
         tools:layout_editor_absoluteX="2dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>
