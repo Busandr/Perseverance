@@ -1,2 +1,1 @@
-App sending one notification a day with random word + translation.
-Created for increasing vocabulary.
+Minimal Android version: 8.0 (API level 26)
