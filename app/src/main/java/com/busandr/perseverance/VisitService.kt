@@ -14,29 +14,31 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import retrofit2.Call
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import java.util.concurrent.TimeUnit
 
-
+//data class Words(val words: String)
 interface RandomWordService {
     @GET("word")
     suspend fun getWord(): Response<JsonArray>
 
     @GET("word?lang=de")
-    suspend fun getGermanWord(): Response<JsonArray>
+     fun getGermanWord(): Call<List<JsonPrimitive>>
 }
 
 
 interface TranslateService {
     @GET("get?langpair=de|ru")
-    suspend fun getGermanTranslation(@Query("q") word: String): Response<JsonObject>
+     fun getGermanTranslation(@Query("q") word: String): Call<JsonObject>
 }
-
+/*
 class VisitService : Service() {
 
     val TAG = "VisitService"
@@ -67,7 +69,7 @@ class VisitService : Service() {
         GlobalScope.launch {
             var randomWord = randomWordService
                 .getGermanWord()
-                .body()
+//                .body()
                 .toString()
                 .replace("[\"","")
                 .replace("\"]", "")
@@ -86,3 +88,5 @@ class VisitService : Service() {
         return null
     }
 }
+
+ */

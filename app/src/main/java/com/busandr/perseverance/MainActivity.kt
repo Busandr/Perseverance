@@ -27,7 +27,7 @@ class MainActivity: AppCompatActivity(){
             )
         }
 
-            val intent = Intent(this, VisitService::class.java)
+//            val intent = Intent(this, VisitService::class.java)
 //        startService(intent)
 
         val workRequest = PeriodicWorkRequestBuilder<WordNotificationWorker>(1, TimeUnit.DAYS)

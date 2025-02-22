@@ -10,13 +10,18 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
+import kotlinx.coroutines.DelicateCoroutinesApi
+import retrofit2.Call
+import retrofit2.Callback
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 
 class WordNotificationWorker(context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) {
+    @OptIn(DelicateCoroutinesApi::class)
     override fun doWork(): Result {
 
         val TAG = "WordNotificationWorker"
@@ -27,13 +32,12 @@ class WordNotificationWorker(context: Context, workerParams: WorkerParameters) :
             .baseUrl(translateService)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-        var api = retrofitTranslateService.create(TranslateService::class.java)
+        var translateApi = retrofitTranslateService.create(TranslateService::class.java)
 
         var retrofit = Retrofit.Builder()
                 .baseUrl(wordsSource)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
-        retrofit.newBuilder()
 
             val channel = NotificationChannel("channel_words", "My Channel", NotificationManager.IMPORTANCE_DEFAULT)
             val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
@@ -50,26 +54,71 @@ class WordNotificationWorker(context: Context, workerParams: WorkerParameters) :
                 .setContentTitle("Your word, messier")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-            GlobalScope.launch {
-                Log.i(TAG, "coroutine has started")
-                var randomWord = randomWordService
-                    .getGermanWord()
+        fun getWord(): String{
+    val randomWordCall = randomWordService.getGermanWord()
+    var randomWord = """Permanenz"""
+    randomWordCall.enqueue(object : Callback<List<JsonPrimitive>> {
+        override fun onResponse(
+            call: Call<List<JsonPrimitive>>,
+            response: retrofit2.Response<List<JsonPrimitive>>
+        ) {
+            if (response.isSuccessful) {
+                randomWord = response
                     .body()
                     .toString()
                     .replace("[\"","")
                     .replace("\"]", "")
-                Log.i(TAG, "random $randomWord")
-                var translatedWord = api
-                    .getGermanTranslation(randomWord)
-                    .body()
-                    ?.get("responseData")
-                    ?.asJsonObject
-                    ?.get("translatedText")
-                Log.i(TAG, "translate $translatedWord")
-
-                val itogueString = "$randomWord == $translatedWord"
-                notificationManager.notify(1, builder.setContentText(itogueString).build())
+                randomWord.let { println(it) }
+            } else {
+                println("Failed to retrieve")
             }
+        }
+
+        override fun onFailure(call: Call<List<JsonPrimitive>>, t: Throwable) {
+            t.printStackTrace()
+        }
+    })
+    return randomWord
+        }
+
+        fun getTranslate(word: String): String{
+            var translateCall = translateApi.getGermanTranslation(word)
+            var translatedWord = word
+            translateCall.enqueue(object : Callback<JsonObject> {
+                override fun onResponse(
+                    call: Call<JsonObject>,
+                    response: retrofit2.Response<JsonObject>
+                ) {
+                    if (response.isSuccessful) {
+                        translatedWord = response
+                            .body()//.toString()
+
+                            ?.get("responseData")
+                            ?.asJsonObject
+                            ?.get("translatedText")
+                            .toString()
+                        translatedWord.let { println(it) }
+                    } else {
+                        println("Failed to retrieve")
+                    }
+
+                }
+
+                override fun onFailure(call: Call<JsonObject>, t: Throwable) {
+                    t.printStackTrace()
+                }
+            })
+            return translatedWord
+        }
+
+        val randomWord = getWord()
+        Log.i(TAG, "random $randomWord")
+
+        val translatedWord = getTranslate(randomWord)
+        Log.i(TAG, "translate $translatedWord")
+
+        val itogueString = "$randomWord == $translatedWord"
+                notificationManager.notify(1, builder.setContentText(itogueString).build())
         return Result.success()
     }
 }
