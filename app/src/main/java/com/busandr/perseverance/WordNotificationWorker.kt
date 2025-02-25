@@ -20,32 +20,31 @@ class WordNotificationWorker(context: Context, workerParams: WorkerParameters) :
     override fun doWork(): Result {
 
         val TAG = "WordNotificationWorker"
-        var wordsSource = "https://random-word-api.herokuapp.com/"
-        var translateService = "https://api.mymemory.translated.net/"
+        var randomWordsLink = "https://random-word-api.herokuapp.com/"
+        var translationLink = "https://api.mymemory.translated.net/"
         Log.i(TAG, "Worker has started")
-        var retrofitTranslateService = Retrofit.Builder()
-            .baseUrl(translateService)
+        var retrofitTranslateInstance = Retrofit.Builder()
+            .baseUrl(translationLink)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-        var api = retrofitTranslateService.create(TranslateService::class.java)
+        var translateService = retrofitTranslateInstance.create(TranslateService::class.java)
 
-        var retrofit = Retrofit.Builder()
-                .baseUrl(wordsSource)
+        var retrofitRandomWordsInstance = Retrofit.Builder()
+                .baseUrl(randomWordsLink)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
-        retrofit.newBuilder()
 
-            val channel = NotificationChannel("channel_words", "My Channel", NotificationManager.IMPORTANCE_DEFAULT)
+            val notificationChannel = NotificationChannel("channel_words", "Words Channel", NotificationManager.IMPORTANCE_DEFAULT)
             val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
+            notificationManager.createNotificationChannel(notificationChannel)
 
             if (ActivityCompat.checkSelfPermission(applicationContext,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
-            ) return Result.failure()//{
+            ) return Result.failure()
 
-            var randomWordService = retrofit.create(RandomWordService::class.java)
-            val builder = NotificationCompat.Builder(applicationContext, "channel_words")
+            var randomWordService = retrofitRandomWordsInstance.create(RandomWordService::class.java)
+            val notificationBuilder = NotificationCompat.Builder(applicationContext, "channel_words")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle("Your word, messier")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -59,16 +58,19 @@ class WordNotificationWorker(context: Context, workerParams: WorkerParameters) :
                     .replace("[\"","")
                     .replace("\"]", "")
                 Log.i(TAG, "random $randomWord")
-                var translatedWord = api
+                var translatedWord = translateService
                     .getGermanTranslation(randomWord)
                     .body()
                     ?.get("responseData")
                     ?.asJsonObject
                     ?.get("translatedText")
+                    .toString()
+                    .replace("[\"","")
+                    .replace("\"]", "")
                 Log.i(TAG, "translate $translatedWord")
 
                 val itogueString = "$randomWord == $translatedWord"
-                notificationManager.notify(1, builder.setContentText(itogueString).build())
+                notificationManager.notify(1, notificationBuilder.setContentText(itogueString).build())
             }
         return Result.success()
     }
