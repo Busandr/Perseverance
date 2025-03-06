@@ -1,7 +1,6 @@
 package com.busandr.perseverance
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Button
@@ -26,9 +25,6 @@ class MainActivity: AppCompatActivity(){
                 REQUEST_CODE
             )
         }
-
-            val intent = Intent(this, VisitService::class.java)
-//        startService(intent)
 
         val workRequest = PeriodicWorkRequestBuilder<WordNotificationWorker>(1, TimeUnit.DAYS)
             .build()
