@@ -14,6 +14,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.net.SocketTimeoutException
 
 
 class WordNotificationWorker(context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) {
@@ -51,24 +52,32 @@ class WordNotificationWorker(context: Context, workerParams: WorkerParameters) :
 
             GlobalScope.launch {
                 Log.i(TAG, "coroutine has started")
-                var randomWord = randomWordService
-                    .getGermanWord()
-                    .body()
-                    .toString()
-                    .replace("[\"","")
-                    .replace("\"]", "")
-                Log.i(TAG, "random $randomWord")
-                var translatedWord = translateService
-                    .getGermanTranslation(randomWord)
-                    .body()
-                    ?.get("responseData")
-                    ?.asJsonObject
-                    ?.get("translatedText")
-                    .toString()
-                    .replace("[\"","")
-                    .replace("\"]", "")
-                Log.i(TAG, "translate $translatedWord")
+                var randomWord = ""
+                var translatedWord = ""
+                try {
 
+                    randomWord = randomWordService
+                        .getGermanWord()
+                        .body()
+                        .toString()
+                        .replace("[\"", "")
+                        .replace("\"]", "")
+                    Log.i(TAG, "random $randomWord")
+                    translatedWord = translateService
+                        .getGermanTranslation(randomWord)
+                        .body()
+                        ?.get("responseData")
+                        ?.asJsonObject
+                        ?.get("translatedText")
+                        .toString()
+                        .replace("[\"", "")
+                        .replace("\"]", "")
+                    Log.i(TAG, "translate $translatedWord")
+
+                }
+                catch (e: SocketTimeoutException) {
+                    println("Socket timeout occurred: ${e.message}")
+                }
                 val itogueString = "$randomWord == $translatedWord"
                 notificationManager.notify(1, notificationBuilder.setContentText(itogueString).build())
             }
