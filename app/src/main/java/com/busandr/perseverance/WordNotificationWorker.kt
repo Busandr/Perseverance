@@ -78,7 +78,10 @@ class WordNotificationWorker(context: Context, workerParams: WorkerParameters) :
                 catch (e: SocketTimeoutException) {
                     println("Socket timeout occurred: ${e.message}")
                 }
-                val itogueString = "$randomWord == $translatedWord"
+                val itogueString = if(randomWord == "" && translatedWord == "")
+                    "Нет соединения. Удали меня"
+                else
+                    "$randomWord == $translatedWord"
                 notificationManager.notify(1, notificationBuilder.setContentText(itogueString).build())
             }
         return Result.success()
